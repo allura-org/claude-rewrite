@@ -16,23 +16,24 @@ A Discord bot powered by LLM AI, ported from Python to Elixir using the Nostrum 
 
 ```
 lib/
-├── consumers.ex                 # Nostrum event handler
+├── claude.ex                    # Main module with public API
 ├── claude/
 │   ├── application.ex           # OTP Application & Supervisor
-│   ├── config.ex                # Configuration constants
+│   ├── config.ex                # Configuration (files & env vars)
 │   ├── llm.ex                   # LLM facade module
 │   ├── llm/
 │   │   ├── provider.ex          # Provider behaviour
 │   │   └── providers/
 │   │       └── openai.ex        # OpenAI-compatible implementation
-│   ├── message_consumer.ex      # Message event routing
+│   ├── message_consumer.ex      # Nostrum event handler
 │   ├── message_handler.ex       # Message processing logic
-│   ├── rate_limiter.ex          # Per-user rate limiting
+│   ├── rate_limiter.ex          # Per-user rate limiting (non-blocking)
 │   ├── user_cache.ex            # ETS-backed user cache
 │   ├── member_cache.ex          # ETS-backed member cache
 │   ├── utils.ex                 # Helper functions
 │   └── commands/
-│       ├── registry.ex          # Command registration
+│       ├── command.ex           # Command behaviour
+│       ├── registry.ex          # Command registration & routing
 │       ├── info.ex              # /info command
 │       └── help.ex              # /help command
 ```
@@ -58,6 +59,22 @@ config :claude,
 ```
 
 Alternatively, one can create `config/dev.exs` or `config/production.exs` to set configs specifically for those runtime environments.
+
+### Environment Variables
+
+You can also configure the bot using environment variables (these take priority over config files):
+
+```bash
+export CLAUDE_DISCORD_TOKEN="your-discord-token"
+export CLAUDE_LLM_API_KEY="your-llm-api-key"
+export CLAUDE_LLM_BASE_URL="https://api.openai.com/v1"
+export CLAUDE_MODEL="gpt-4"
+export CLAUDE_MAX_TOKENS="1024"
+export CLAUDE_MAX_CONTEXT_MESSAGES="50"
+export CLAUDE_RATE_LIMIT_MS="2000"
+```
+
+This is useful for deployments where you don't want to commit secrets to config files.
 
 ### Configuration Options
 

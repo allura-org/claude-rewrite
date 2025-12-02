@@ -5,12 +5,14 @@ defmodule Claude.Commands.Help do
   Displays help information about the bot's features and usage.
   """
 
+  @behaviour Claude.Commands.Command
+
   require Logger
 
-  @doc """
-  Returns the command definition for registration with Discord.
-  """
-  @spec definition() :: map()
+  @impl Claude.Commands.Command
+  def name, do: "help"
+
+  @impl Claude.Commands.Command
   def definition do
     %{
       name: "help",
@@ -19,10 +21,7 @@ defmodule Claude.Commands.Help do
     }
   end
 
-  @doc """
-  Handles the /help command interaction.
-  """
-  @spec handle(Nostrum.Struct.Interaction.t()) :: :ok | {:error, term()}
+  @impl Claude.Commands.Command
   def handle(interaction) do
     Logger.info("Handling /help command from #{interaction.user.username}")
 

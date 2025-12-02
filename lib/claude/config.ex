@@ -1,6 +1,35 @@
 defmodule Claude.Config do
   @moduledoc """
   Configuration constants and helpers for the Claude Discord bot.
+
+  ## Configuration Sources
+
+  Configuration can be provided via:
+  1. **Environment variables** (highest priority) - prefixed with `CLAUDE_`
+  2. **Config files** - `config/config.exs`, `config/dev.exs`, etc.
+
+  ## Supported Environment Variables
+
+  | Environment Variable | Config Key | Type | Description |
+  |---------------------|------------|------|-------------|
+  | `CLAUDE_DISCORD_TOKEN` | `discord.token` | string | Discord bot token |
+  | `CLAUDE_LLM_API_KEY` | `llm.llm_api_key` | string | LLM provider API key |
+  | `CLAUDE_LLM_BASE_URL` | `llm.llm_base_url` | string | LLM API base URL |
+  | `CLAUDE_MODEL` | `llm.model` | string | LLM model name |
+  | `CLAUDE_MAX_TOKENS` | `llm.max_tokens` | integer | Max tokens in response |
+  | `CLAUDE_MAX_CONTEXT_MESSAGES` | `llm.max_context_messages` | integer | Context message limit |
+  | `CLAUDE_RATE_LIMIT_MS` | `llm.rate_limit_ms` | integer | Rate limit in milliseconds |
+
+  ## Example
+
+      # Using environment variables
+      export CLAUDE_DISCORD_TOKEN="your-token"
+      export CLAUDE_LLM_API_KEY="your-api-key"
+      export CLAUDE_MODEL="gpt-4"
+      mix run --no-halt
+
+      # Or inline
+      CLAUDE_DISCORD_TOKEN=xxx CLAUDE_LLM_API_KEY=yyy mix run --no-halt
   """
 
   @default_system_prompt """
@@ -124,11 +153,20 @@ defmodule Claude.Config do
 
   @doc """
   Returns the Discord bot token.
+
+  Checks `CLAUDE_DISCORD_TOKEN` environment variable first,
+  then falls back to config file.
   """
-  @spec discord_token() :: String.t()
+  @spec discord_token() :: String.t() | nil
   def discord_token do
-    discord_config = Application.fetch_env!(:claude, :discord)
-    discord_config.token
+    case System.get_env("CLAUDE_DISCORD_TOKEN") do
+      nil ->
+        discord_config = Application.get_env(:claude, :discord, %{})
+        Map.get(discord_config, :token)
+
+      token ->
+        token
+    end
   end
 
   @doc """
@@ -150,11 +188,53 @@ defmodule Claude.Config do
 
   # Private helpers
 
+  # Environment variable mappings for LLM config keys
+  @env_var_mappings %{
+    llm_api_key: "CLAUDE_LLM_API_KEY",
+    llm_base_url: "CLAUDE_LLM_BASE_URL",
+    model: "CLAUDE_MODEL",
+    max_tokens: "CLAUDE_MAX_TOKENS",
+    max_context_messages: "CLAUDE_MAX_CONTEXT_MESSAGES",
+    rate_limit_ms: "CLAUDE_RATE_LIMIT_MS",
+    system_prompt: "CLAUDE_SYSTEM_PROMPT"
+  }
+
+  # Keys that should be parsed as integers
+  @integer_keys [:max_tokens, :max_context_messages, :rate_limit_ms]
+
   defp get_config(key, default) do
+    # First, try environment variable
+    case get_from_env(key) do
+      nil ->
+        # Fall back to config file
+        get_from_app_config(key, default)
+
+      value ->
+        parse_value(key, value)
+    end
+  end
+
+  defp get_from_env(key) do
+    case Map.get(@env_var_mappings, key) do
+      nil -> nil
+      env_var -> System.get_env(env_var)
+    end
+  end
+
+  defp get_from_app_config(key, default) do
     case Application.get_env(:claude, :llm) do
       nil -> default
       llm_config when is_map(llm_config) -> Map.get(llm_config, key, default)
       _ -> default
     end
   end
+
+  defp parse_value(key, value) when key in @integer_keys do
+    case Integer.parse(value) do
+      {int, ""} -> int
+      _ -> value
+    end
+  end
+
+  defp parse_value(_key, value), do: value
 end

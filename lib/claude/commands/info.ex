@@ -5,14 +5,16 @@ defmodule Claude.Commands.Info do
   Displays current bot configuration and status information.
   """
 
+  @behaviour Claude.Commands.Command
+
   require Logger
 
   alias Claude.{Config, LLM}
 
-  @doc """
-  Returns the command definition for registration with Discord.
-  """
-  @spec definition() :: map()
+  @impl Claude.Commands.Command
+  def name, do: "info"
+
+  @impl Claude.Commands.Command
   def definition do
     %{
       name: "info",
@@ -21,10 +23,7 @@ defmodule Claude.Commands.Info do
     }
   end
 
-  @doc """
-  Handles the /info command interaction.
-  """
-  @spec handle(Nostrum.Struct.Interaction.t()) :: :ok | {:error, term()}
+  @impl Claude.Commands.Command
   def handle(interaction) do
     Logger.info("Handling /info command from #{interaction.user.username}")
 

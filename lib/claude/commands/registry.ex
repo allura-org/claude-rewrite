@@ -6,11 +6,29 @@ defmodule Claude.Commands.Registry do
   - Registering commands on bot startup
   - Handling command interactions
   - Routing commands to their respective handlers
+
+  ## Adding New Commands
+
+  1. Create a new command module implementing `Claude.Commands.Command`
+  2. Add it to the `@commands` list in this module
+  3. The command will be automatically registered and routed
   """
 
   require Logger
 
   alias Nostrum.Api.ApplicationCommand
+
+  # List of command modules that implement the Command behaviour
+  @commands [
+    Claude.Commands.Info,
+    Claude.Commands.Help
+  ]
+
+  @doc """
+  Returns the list of registered command modules.
+  """
+  @spec commands() :: [module()]
+  def commands, do: @commands
 
   @doc """
   Registers all application commands with Discord.
@@ -21,12 +39,9 @@ defmodule Claude.Commands.Registry do
   def register_commands do
     Logger.info("Registering application commands...")
 
-    commands = [
-      Claude.Commands.Info.definition(),
-      Claude.Commands.Help.definition()
-    ]
+    definitions = Enum.map(@commands, & &1.definition())
 
-    case ApplicationCommand.bulk_overwrite_global_commands(commands) do
+    case ApplicationCommand.bulk_overwrite_global_commands(definitions) do
       {:ok, registered} ->
         Logger.info("Successfully registered #{length(registered)} application commands")
         :ok
@@ -47,15 +62,22 @@ defmodule Claude.Commands.Registry do
 
     Logger.debug("Handling command: #{command_name}")
 
-    case command_name do
-      "info" -> Claude.Commands.Info.handle(interaction)
-      "help" -> Claude.Commands.Help.handle(interaction)
-      _ ->
+    case find_command(command_name) do
+      nil ->
         Logger.warning("Unknown command: #{command_name}")
         respond_unknown_command(interaction)
+
+      command_module ->
+        command_module.handle(interaction)
     end
 
     :ok
+  end
+
+  # Private helpers
+
+  defp find_command(name) do
+    Enum.find(@commands, fn module -> module.name() == name end)
   end
 
   defp respond_unknown_command(interaction) do

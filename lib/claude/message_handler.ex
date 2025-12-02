@@ -22,7 +22,7 @@ defmodule Claude.MessageHandler do
   @spec handle_message(Nostrum.Struct.Message.t()) :: :ok | {:error, term()}
   def handle_message(message) do
     with :ok <- validate_message(message),
-         {:ok, _wait_time} <- RateLimiter.check_and_update(message.author.id) do
+         :ok <- RateLimiter.check_and_wait(message.author.id) do
       process_message(message)
     else
       {:error, :invalid_message} ->
