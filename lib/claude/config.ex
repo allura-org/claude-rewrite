@@ -70,7 +70,7 @@ defmodule Claude.Config do
   """
   @spec model() :: String.t()
   def model do
-    get_config(:model, "doubao-seed-1-6-thinking-250615")
+    get_config(:model, "claude-opus-4-5")
   end
 
   @doc """

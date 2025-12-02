@@ -25,7 +25,7 @@ config :claude,
     provider: Claude.LLM.Providers.OpenAI,
 
     # Model to use for chat completions
-    model: "deepseek-chat",
+    model: "claude-opus-4-5",
 
     # API key for the LLM provider
     llm_api_key: nil,
