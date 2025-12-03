@@ -21,12 +21,9 @@ defmodule Claude.MessageConsumer do
     Logger.info("Bot connected as #{ready_data.user.username} (ID: #{bot_user_id})")
     Config.set_bot_user_id(bot_user_id)
 
-    # Register slash commands asynchronously
-    Task.start(fn ->
-      # Small delay to ensure the bot is fully ready
-      Process.sleep(1_000)
-      CommandRegistry.register_commands()
-    end)
+    # wait for any other init to happen
+    Process.sleep(1_000)
+    CommandRegistry.register_commands()
 
     :ok
   end
@@ -34,9 +31,7 @@ defmodule Claude.MessageConsumer do
   # Handle INTERACTION_CREATE - routes slash commands to handlers
   def handle_event({:INTERACTION_CREATE, interaction, _ws_state}) do
     # Handle interactions in a separate process to not block the consumer
-    Task.start(fn ->
-      CommandRegistry.handle_interaction(interaction)
-    end)
+    CommandRegistry.handle_interaction(interaction)
   end
 
   # Handle MESSAGE_CREATE - routes messages to MessageHandler
@@ -51,9 +46,7 @@ defmodule Claude.MessageConsumer do
 
       true ->
         # Handle in a separate process to not block the consumer
-        Task.start(fn ->
-          MessageHandler.handle_message(msg)
-        end)
+        MessageHandler.handle_message(msg)
     end
   end
 
